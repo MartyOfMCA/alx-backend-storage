@@ -1,0 +1,2 @@
+// Retrieve documents in collection whose name matches given string
+db.school.find({ name: { $eq: "Holberton school" } })
