@@ -79,6 +79,24 @@ def count_calls(method: Callable) -> Callable:
     return (wrapper)
 
 
+def replay(method):
+    """
+    Retrieves the history of calls for the
+    given function.
+    """
+    key = method.__qualname__
+    _redis = redis.Redis()
+
+    totalCalls = int(_redis.get(key).decode("utf-8"))
+    print(f"{key} was called {totalCalls} times:")
+
+    values = _redis.lrange(f"{key}:inputs", 0, -1)
+    keys = _redis.lrange(f"{key}:outputs", 0, -1)
+
+    for k, v in zip(keys, values):
+        print(f"{key}(*{v.decode('utf-8')}) -> {k.decode('utf-8')}")
+
+
 class Cache:
     """
     Store an instance of a Redis client.
