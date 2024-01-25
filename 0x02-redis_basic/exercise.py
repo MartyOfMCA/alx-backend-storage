@@ -8,6 +8,40 @@ from typing import (
         Union,
         Callable
         )
+from functools import wraps
+
+
+def count_calls(method: Callable) -> Callable:
+    """
+    Counts the number of calls to the given
+    callback.
+
+    Parameters:
+        callback : Callable
+        The callback method to track.
+
+    Returns:
+        A wrapper instance tracking calls
+        to given callback.
+    """
+    @wraps(method)
+    def wrapper(self, data) -> str:
+        """
+        Tracks the number of calls to the
+        decorated method.
+
+        Paraeters:
+            data : Union
+            The value passed to decorated
+            method.
+
+        Returns:
+            The number of time the callback
+            is fired.
+        """
+        self._redis.incr(method.__qualname__)
+        return (method(self, data))
+    return (wrapper)
 
 
 class Cache:
@@ -20,6 +54,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
         Store the given data in Redis using
