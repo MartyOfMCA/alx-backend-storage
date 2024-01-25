@@ -11,6 +11,41 @@ from typing import (
 from functools import wraps
 
 
+def call_history(method: Callable) -> Callable:
+    """
+    Add value returned from callback to
+    tail of list.
+
+    Parameters:
+        callback : Callback
+        The callback method to track.
+
+    Returns:
+        A wrapper instance to callback
+        method.
+    """
+    @wraps(method)
+    def wrapper(self, *data):
+        """
+        Add values returned from callback
+        into the end of a list.
+
+        Paramters:
+            data : Union
+            The data value passed to decorated
+            method.
+
+        Returns:
+            The value obtained the callback
+            method.
+        """
+        self._redis.rpush(f"{method.__qualname__}:inputs", str(data))
+        uuid = method(self, *data)
+        self._redis.rpush(f"{method.__qualname__}:outputs", uuid)
+        return (uuid)
+    return (wrapper)
+
+
 def count_calls(method: Callable) -> Callable:
     """
     Counts the number of calls to the given
@@ -30,7 +65,7 @@ def count_calls(method: Callable) -> Callable:
         Tracks the number of calls to the
         decorated method.
 
-        Paraeters:
+        Parameters:
             data : Union
             The value passed to decorated
             method.
@@ -54,6 +89,7 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @call_history
     @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
